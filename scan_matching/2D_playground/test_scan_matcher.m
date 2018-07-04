@@ -69,7 +69,7 @@ sensor = init_sensor();
 NI= [];
 
 # -delta_ang -> +90 error
-ref_pose = [0 0 deg2rad(0)]; # TODO: 36 -> 120 (?!), 24 -> 30 (+)
+ref_pose = [0 0 deg2rad(24)]; # TODO: 36 -> 120 (?!), 24 -> 30 (+)
 cur_pose = [1 1 deg2rad(30)];
 
 ref_scan = get_scan_view(ref_pose, sensor, world);
@@ -77,9 +77,9 @@ cur_scan = get_scan_view(cur_pose, sensor, world);
 
 # filterScan(..) ?
 
-d_pose = Opt.scanmatcher.handle(ref_scan, ref_pose, cur_scan, ref_pose);
+d_pose = [0 0 0];
+d_pose = Opt.scanmatcher.handle(ref_scan, ref_pose, cur_scan, ref_pose)
 est_pose = ref_pose + d_pose;
-est_pose = cur_pose;
 
 fprintf('== DONE ==\n')
 fprintf('[GT Pose] x: %.2f; y: %.2f; th: %.2f.\n',
@@ -102,8 +102,11 @@ plot(ww.walls(1,:), ww.walls(2,:), 'LineWidth', 1, 'color', 'k');
 hold on;
 # TODO: 8-6-24 robot display artifact
 display_scan(ref_scan, ref_pose, 'b');
+display_pose2D(ref_pose, 'b');
 display_scan(cur_scan, cur_pose, 'g');
+display_pose2D(cur_pose, 'g');
 display_scan(cur_scan, est_pose, 'r');
+display_pose2D(est_pose, 'r');
 # TODO: add with poses values
 
 ginput(1);

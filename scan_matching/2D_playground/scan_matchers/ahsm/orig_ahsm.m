@@ -78,13 +78,13 @@ function [d_pose] = orig_ahsm(ref_scan, ref_pose, cur_scan, cur_pose)
   rtref_scan = transform_scan(ref_scan, ref_pose + main_dir_pose);
   rtcur_scan = transform_scan(cur_scan, ref_pose + d_pose + main_dir_pose);
 
-  if DEBUG.ahsm || DEBUG.all # show transformed scans
-    figure;
-    hold on
-    axis equal
-    grid on
-    displayPoints(rtref_scan.cart,'b',0);
-    displayPoints(rtcur_scan.cart,'g',0);
+  if DEBUG.ahsm || DEBUG.all # TODO
+    ## figure;
+    ## hold on
+    ## axis equal
+    ## grid on
+    ## display_scan(rtref_scan.cart,'b',0);
+    ## display_scan(rtcur_scan.cart,'g',0);
   end
   
   bounds = [min(min(rtref_scan.cart(:,1)),min(rtcur_scan.cart(:,1))), ...
