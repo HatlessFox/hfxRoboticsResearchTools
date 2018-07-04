@@ -1,4 +1,4 @@
-function [d_pose NI] = orig_ahsm(ref_scan, ref_pose, cur_scan, cur_pose)
+function [d_pose] = orig_ahsm(ref_scan, ref_pose, cur_scan, cur_pose)
 # Angle Histogram Scan Matcher
 #   This method uses a 1D signal-type representation of the scan points.
 #   (1)
@@ -22,9 +22,7 @@ function [d_pose NI] = orig_ahsm(ref_scan, ref_pose, cur_scan, cur_pose)
 #   by Gerhard Wei$, Christopher Wetzler, Ewald von Puttkamer
 
   global DEBUG;
-
   d_pose = [0 0 0];
-  NI = 1;
 
   ##############################################################################
   # Estimate rotation

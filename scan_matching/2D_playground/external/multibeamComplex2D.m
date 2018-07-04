@@ -9,6 +9,7 @@ Fr = Rob.state;
 Q = Fr.gt; %+Rob.state0([1 2 3 6]); %frame ground truth
 T = Q(1:2); %robot pose
 rad = Q(3); %orientation
+laser_rotation = createRotation(-rad)(1:2, 1:2);
 
 nBeams = Sen.par.nBeams;
 S = Sen.par; %Sensor parameter
@@ -64,14 +65,11 @@ for i = 1:nBeams
     else
         outlp = 1;
     end
-    cxout = cxout+(ns*d)*cos(beamangle);
-    cyout = cyout+(ns*d)*sin(beamangle);
-    
-    localCart = cartProject([cxout cyout ], -rad,
-                            (createRotation(-rad)*[-(T(1:2)*outlp)' 1]')' );
 
-    %localCart = cartProject([cxout cyout ], rad(3), (e2R([0 0 rad(3)])*[(T(1:2)*outlp)' 1]')' );
-    
+    obstacle = [cxout+(ns*d)*cos(beamangle); cyout+(ns*d)*sin(beamangle)];
+
+    laser_transform = (laser_rotation*[-(T(1:2)*outlp)']')';
+    localCart = (laser_rotation * obstacle)' + laser_transform;
     
     # Return the points locally referenced
     localCart2D(i-skipped,1:2) = [localCart(1:2)];

@@ -77,7 +77,7 @@ cur_scan = get_scan_view(cur_pose, sensor, world);
 
 # filterScan(..) ?
 
-[d_pose NI] = Opt.scanmatcher.handle(ref_scan, ref_pose, cur_scan, ref_pose);
+d_pose = Opt.scanmatcher.handle(ref_scan, ref_pose, cur_scan, ref_pose);
 est_pose = ref_pose + d_pose;
 est_pose = cur_pose;
 
@@ -109,48 +109,3 @@ display_scan(cur_scan, est_pose, 'r');
 ginput(1);
 #input("press to continue");
 
-return
-        
-
-    %% PLOTTING
-    
-    if (size(Rob.Map.grid,1) > 0) && Opt.error.display_result == 1
-        
-        if Opt.plot.points_cr
-            set(Opt.plot.points_cr_h,'XData',Rob.Map.grid(:,1),'YData',Rob.Map.grid(:,2));
-        end
-        
-        if Opt.plot.ground_truth
-            Opt.plot.ground_truth_data = [Opt.plot.ground_truth_data; Rob.state.gt(:,end)' ];
-            set(Opt.plot.ground_truth_h,'XData',Opt.plot.ground_truth_data(:,1),'YData',Opt.plot.ground_truth_data(:,2));
-            grob = graphicsRobot(Opt.plot.ground_truth_data(end,:)');
-            set(Opt.plot.ground_truth_h_rob,'XData',grob(1,:),'YData',grob(2,:));
-        end
-        
-        if Opt.plot.dead_reckoning
-            Opt.plot.dead_reckoning_data = [Opt.plot.dead_reckoning_data ; frameRef(Rob.state.dr(:,end),Rob.state0([1 2 6]),0)'];
-            set(Opt.plot.dead_reckoning_h,'XData',Opt.plot.dead_reckoning_data(:,1),'YData',Opt.plot.dead_reckoning_data(:,2));
-            grob = graphicsRobot(Opt.plot.dead_reckoning_data(end,:)');
-            set(Opt.plot.dead_reckoning_h_rob,'XData',grob(1,:),'YData',grob(2,:));
-        end
-        
-        if Opt.plot.corrected
-            Opt.plot.corrected_data = [Opt.plot.corrected_data; frameRef(Rob.state.x(:,end),Rob.state0([1 2 6]),0)'];
-            set(Opt.plot.corrected_h,'XData',Opt.plot.corrected_data(:,1),'YData',Opt.plot.corrected_data(:,2));
-            grob = graphicsRobot(Opt.plot.corrected_data(end,:)');
-            set(Opt.plot.corrected_h_rob,'XData',grob(1,:),'YData',grob(2,:));
-            
-            if Opt.plot.correction_uncertainty
-                draw_ellipse(Opt.plot.corrected_data(end,:),Rob.state.P,'r',Opt.plot.correction_uncertainty_h);
-            end
-        end
-        
-        drawnow;
-    end
-    out = 1;
-
-
-if ~isempty(NI)
-    error_gt =  errorReport(Rob,SimSen,Opt, NI);
-    save('std_last','error_gt');
-end
