@@ -101,13 +101,10 @@ axis equal;
 plot(ww.walls(1,:), ww.walls(2,:), 'LineWidth', 1, 'color', 'k');
 hold on;
 # TODO: 8-6-24 robot display artifact
-display_scan(ref_scan, ref_pose, 'b');
-display_pose2D(ref_pose, 'b');
-display_scan(cur_scan, cur_pose, 'g');
-display_pose2D(cur_pose, 'g');
-display_scan(cur_scan, est_pose, 'r');
-display_pose2D(est_pose, 'r');
-# TODO: add with poses values
+display_robot2D(ref_scan, ref_pose, 'b');
+display_robot2D(cur_scan, est_pose, 'r');
+display_robot2D(cur_scan, cur_pose, 'g');
+# TODO: show pose values as text
 
 ginput(1);
 #input("press to continue");
