@@ -63,7 +63,7 @@ sensor = setup_sensor();
 # TODO: createMap
 
 # -delta_ang -> +90 error
-ref_pose = [0 0 deg2rad(30)]; # TODO: 36 -> 120 (?!), 24 -> 30 (+)
+ref_pose = [0 0 deg2rad(0)]; # TODO: 36 -> 120 (?!), 24 -> 30 (+)
 cur_pose = [1 1 deg2rad(30)];
 
 ref_scan = get_scan_view(ref_pose, sensor, world);
