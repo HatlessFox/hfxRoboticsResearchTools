@@ -11,27 +11,11 @@ close all
 clear
 
 
-global Opt;
-global DEBUG;
-
 # IDs are taken from https://github.com/szandara/2DScanMatching_SLAM
-
-# single algorithm debug option
-# fine-grain opts:
-#   - p2lAssociation, cpAssociation, mpAssociation, mbAssociation,
-#     mahaAssociation, normAssociation
-#   - gmapping, montecarlo, ga, houghSM, fmtsm, NDT, lf_sog, ahsm
-#   - all
-DEBUG.ahsm = 1;
-DEBUG.all = 0;
 
 Opt.random.seed = sum(100*clock);
 fprintf('Random seed: %6.0f.\n',Opt.random.seed);
 
-# Possible values: icp, IDC, 
-#   TODO: pIC,MbICP,ga,gmapping,montecarlo,fmtsm,houghSM,NDT,lf_sog, icpbSM.
-#   orig_ahsm
-Opt.scanmatcher.handle = @orig_ahsm;
 # If using mixed algorithm 'icpbSM'
 # you have to fill the next two with function handles.
 #   Possible values: mahaAssociation (mahalanobis distance),
@@ -61,6 +45,18 @@ Opt.error.display_result = 1;
 Opt.map.resolution = Opt.scanmatcher.map_res;
 Opt.plot.robot_scale = 1;
 
+################################################################################
+################################################################################
+################################################################################
+
+# Possible values: icp, IDC,
+#   TODO: pIC,MbICP,ga,gmapping,montecarlo,fmtsm,houghSM,NDT,lf_sog, icpbSM.
+#
+# AngleHistogram: OrigAhsm
+
+scan_matcher = OrigAhsm("debug", true);
+
+
 ww = wall_world();
 world = init_world(ww);
 sensor = setup_sensor();
@@ -76,7 +72,9 @@ cur_scan = get_scan_view(cur_pose, sensor, world);
 # filterScan(..) ?
 
 d_pose = [0 0 0];
-d_pose = Opt.scanmatcher.handle(ref_scan, ref_pose, cur_scan, ref_pose)
+d_pose = scan_matcher.find_transformation(ref_scan, ref_pose,
+                                          cur_scan, ref_pose);
+
 est_pose = ref_pose + d_pose;
 
 fprintf('== DONE ==\n')
