@@ -60,9 +60,65 @@ classdef OrigAhsm
       h = normalize(h, "peak");
     endfunction
 
+    function coord_shift = find_coord_shift(this, ref_scan, cur_scan, coord_id)
+      min_v = min([ref_scan.cart(:, coord_id); cur_scan.cart(:, coord_id)]);
+      max_v = max([ref_scan.cart(:, coord_id); cur_scan.cart(:, coord_id)]);
+      hist_cbin_range = min_v:this.chist_res:max_v;
 
-    function ang = find_rotation(this, ref_scan, ref_pose,
-                                       cur_scan, cur_pose)
+      [ref_hist _] = hist(ref_scan.cart(:, coord_id), hist_cbin_range);
+      ref_hist = normalize(ref_hist, "peak");
+      [cur_hist _] = hist(cur_scan.cart(:, coord_id), hist_cbin_range);
+      cur_hist = normalize(cur_hist, "peak");
+
+      max_abs_lag = floor(size(ref_hist, 1) / 2);
+      [corr lags] = xcorr(cur_hist, ref_hist, max_abs_lag);
+
+      # TODO: find several hypotheses?
+      [_ max_lag_i] = max(corr);
+      coord_shift = lags(max_lag_i) * this.chist_res;
+
+      if this.is_debug_mode # show hists
+        title = sprintf("[DEBUG] %d Coordinate Histograms", coord_id);
+        OrigAhsm.show_histograms(title, ref_hist, cur_hist,
+                                 lags, corr, this.chist_res, coord_shift);
+      endif
+    endfunction
+
+    function coords = find_translation(this, ref_scan, ref_pose,
+                                             cur_scan, cur_pose)
+      # build angle histogram
+      ref_tscan = transform_scan(ref_scan, ref_pose);
+      ares = this.ahist_res;
+      ref_ahist = this.make_angle_histogram(ref_tscan);
+      max_abs_lag = size(ref_ahist, 1) / 2;
+
+      # Find main direction based on angle histogram
+      [_ main_dir_lag_i] = max(ref_ahist); # (?) find several
+      main_dir = (main_dir_lag_i - max_abs_lag - 1) * this.ahist_res;
+      main_dir_pose = [0 0 main_dir];
+
+      rtref_scan = transform_scan(ref_scan, ref_pose + main_dir_pose);
+      rtcur_scan = transform_scan(cur_scan, cur_pose + main_dir_pose);
+
+      if this.is_debug_mode # TODO
+        ## figure;
+        ## hold on
+        ## axis equal
+        ## grid on
+        ## display_scan(rtref_scan.cart,'b',0);
+        ## display_scan(rtcur_scan.cart,'g',0);
+      end
+
+      d_x = this.find_coord_shift(rtref_scan, rtcur_scan, 1);
+      d_y = this.find_coord_shift(rtref_scan, rtcur_scan, 2);
+
+      # TODO: rotation
+      main_dir = 0;
+      rt = [cos(main_dir) -sin(main_dir); sin(main_dir) cos(main_dir)];
+      coords = rt * [d_x; d_y];
+    endfunction
+
+    function ang = find_rotation(this, ref_scan, ref_pose, cur_scan)
       ref_tscan = transform_scan(ref_scan, ref_pose);
       cur_tscan = transform_scan(cur_scan, ref_pose);
 
@@ -93,74 +149,9 @@ classdef OrigAhsm
       d_pose = [0 0 0];
       prob = 1;
 
-      d_pose(3) = this.find_rotation(ref_scan, ref_pose, cur_scan, cur_pose);
-      ##########################################################################
-      # Estimate translation
-
-      #TODO: review
-      ref_tscan = transform_scan(ref_scan, ref_pose);
-      ares = this.ahist_res;
-      ref_ahist = this.make_angle_histogram(ref_tscan);
-      max_abs_lag = size(ref_ahist, 1) / 2;
-
-      # Find main direction
-      [_ main_dir_lag_i] = max(ref_ahist); # (?) find several
-      main_dir = (main_dir_lag_i - max_abs_lag - 1) * this.ahist_res;
-      main_dir_pose = [0 0 main_dir];
-  
-      rtref_scan = transform_scan(ref_scan, ref_pose + main_dir_pose);
-      rtcur_scan = transform_scan(cur_scan, ref_pose + d_pose + main_dir_pose);
-
-      if this.is_debug_mode # TODO
-        ## figure;
-        ## hold on
-        ## axis equal
-        ## grid on
-        ## display_scan(rtref_scan.cart,'b',0);
-        ## display_scan(rtcur_scan.cart,'g',0);
-      end
-
-      #TODO: hist(angles, -pi:resolution:pi - resolution);
-      min_x = min(min(rtref_scan.cart(:,1)),min(rtcur_scan.cart(:,1)));
-      max_x = max(max(rtref_scan.cart(:,1)),max(rtcur_scan.cart(:,1)));
-      ref_xhist = make_histogram(rtref_scan.cart(:, 1), min_x, max_x,
-                                 this.chist_res);
-      cur_xhist = make_histogram(rtcur_scan.cart(:, 1), min_x, max_x,
-                                 this.chist_res);
-
-      min_y = min(min(rtref_scan.cart(:,2)),min(rtcur_scan.cart(:,2)));
-      max_y = max(max(rtref_scan.cart(:,2)),max(rtcur_scan.cart(:,2)));
-      ref_yhist = make_histogram(rtref_scan.cart(:, 2), min_y, max_y,
-                                 this.chist_res);
-      cur_yhist = make_histogram(rtcur_scan.cart(:, 2), min_y, max_y,
-                                 this.chist_res);
-
-      max_abs_xlag = floor(size(ref_xhist, 1) / 2);
-      [x_xcorr x_lags] = xcorr(cur_xhist, ref_xhist, max_abs_xlag);
-
-      max_abs_ylag = floor(size(ref_yhist, 1) / 2);
-      [y_xcorr y_lags] = xcorr(cur_yhist, ref_yhist, max_abs_ylag);
-
-      # TODO: find several hypotheses?
-      [_ x_max_lag_i] = max(x_xcorr);
-      [_ y_max_lag_i] = max(y_xcorr);
-      d_x_dir = x_lags(x_max_lag_i) * this.chist_res;
-      d_y_dir = y_lags(y_max_lag_i) * this.chist_res;
-
-      if this.is_debug_mode # show hists
-        OrigAhsm.show_histograms("[DEBUG] X Coordinate Histograms",
-                                 ref_xhist, cur_xhist,
-                                 x_lags, x_xcorr, this.chist_res, d_x_dir);
-        OrigAhsm.show_histograms("[DEBUG] Y Coordinate Histograms",
-                                 ref_yhist, cur_yhist,
-                                 y_lags, y_xcorr, this.chist_res, d_y_dir);
-      end
-
-      # TODO: rotation
-      main_dir = 0;
-      rt = [cos(main_dir) -sin(main_dir); sin(main_dir) cos(main_dir)];
-      d_pose(1:2) = rt * [d_x_dir; d_y_dir];
-
+      d_pose(3) = this.find_rotation(ref_scan, ref_pose, cur_scan);
+      d_pose(1:2) = this.find_translation(ref_scan, ref_pose,
+                                          cur_scan, ref_pose + d_pose);
     endfunction
   endmethods
 

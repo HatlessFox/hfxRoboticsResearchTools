@@ -10,4 +10,3 @@ function [corr lags] = cxcorr(seq, ref_seq)
   eff_seq = [seq; zeros(seq_nm, 1)];
   [corr lags] = xcorr(eff_seq, eff_ref, seq_nm / 2);
 endfunction
-  
