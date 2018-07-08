@@ -71,15 +71,13 @@ classdef OrigAhsm
       [ref_ahist ref_cbins] = this.make_angle_histogram(ref_tscan);
       [cur_ahist cur_cbins] = this.make_angle_histogram(cur_tscan);
 
-      max_abs_lag = ceil(size(ref_ahist, 1) / 2);
-      # TODO: use cxcorr
-      [a_xcorr a_lags] = xcorr(cur_ahist, ref_ahist, max_abs_lag);
+      [a_xcorr a_lags] = cxcorr(cur_ahist, ref_ahist);
       a_xcorr = normalize(a_xcorr, "peak");
       # (?) to cut off the borders with .*hann(len(ang_corr)) 
       # (?) smooth withfastsmooth(ang_corr, 10); (breakes a peaky function)
-      # findLocalMaxima(ang_corr, 3) (? BUGGY)
+
+      # (?) handle several maxes (noisy scan case)
       [mx mx_ang_corr_lag_i] = max(a_xcorr);
-      # to [-180, 180)
       ang = cur_cbins(mx_ang_corr_lag_i);
 
       if this.is_debug_mode
