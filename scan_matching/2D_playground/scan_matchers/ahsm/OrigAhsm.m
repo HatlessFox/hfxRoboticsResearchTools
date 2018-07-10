@@ -27,6 +27,7 @@ classdef OrigAhsm
     chist_res = 0.25; # cm
   endproperties
   methods
+
     function this = OrigAhsm(varargin)
       p = inputParser();
       p.addParameter("debug", false, @isbool);
@@ -84,38 +85,39 @@ classdef OrigAhsm
       endif
     endfunction
 
-    function coords = find_translation(this, ref_scan, ref_pose,
-                                             cur_scan, cur_pose)
-      # build angle histogram
+    function main_dir = find_main_direction(this, ref_scan, ref_pose)
       ref_tscan = transform_scan(ref_scan, ref_pose);
       ares = this.ahist_res;
-      ref_ahist = this.make_angle_histogram(ref_tscan);
-      max_abs_lag = size(ref_ahist, 1) / 2;
+      [ref_ahist cbins] = this.make_angle_histogram(ref_tscan);
 
-      # Find main direction based on angle histogram
-      [_ main_dir_lag_i] = max(ref_ahist); # (?) find several
-      main_dir = (main_dir_lag_i - max_abs_lag - 1) * this.ahist_res;
-      main_dir_pose = [0 0 main_dir];
+       # (?) find several
+      [_ main_dir_i] = max(ref_ahist);
+      main_dir = cbins(main_dir_i);
+    endfunction
 
-      rtref_scan = transform_scan(ref_scan, ref_pose + main_dir_pose);
-      rtcur_scan = transform_scan(cur_scan, cur_pose + main_dir_pose);
+    function coords = find_translation(this, ref_scan, ref_pose,
+                                       cur_scan, cur_pose)
+      main_dir = this.find_main_direction(ref_scan, ref_pose);
+      main_dir_dpose = [0 0 main_dir];
 
-      if this.is_debug_mode # TODO
-        ## figure;
-        ## hold on
-        ## axis equal
-        ## grid on
-        ## display_scan(rtref_scan.cart,'b',0);
-        ## display_scan(rtcur_scan.cart,'g',0);
-      end
+      rtref_scan = transform_scan(ref_scan, ref_pose + main_dir_dpose);
+      rtcur_scan = transform_scan(cur_scan, cur_pose + main_dir_dpose);
 
-      d_x = this.find_coord_shift(rtref_scan, rtcur_scan, 1);
-      d_y = this.find_coord_shift(rtref_scan, rtcur_scan, 2);
+      if this.is_debug_mode
+        figure("name", "[DEBUG] Main Direction Alignment", "numbertitle", "off",
+             "menubar", "none", "toolbar", "none");
+        hold on;
+        axis equal;
+        grid on;
+        display_scan2D(rtref_scan, 'b');
+        display_scan2D(rtcur_scan, 'r');
+      endif
 
-      # TODO: rotation
-      main_dir = 0;
-      rt = [cos(main_dir) -sin(main_dir); sin(main_dir) cos(main_dir)];
-      coords = rt * [d_x; d_y];
+      d_x = this.find_coord_shift(rtcur_scan, rtref_scan, 1);
+      d_y = this.find_coord_shift(rtcur_scan, rtref_scan, 2);
+
+      rot = createRotation(-main_dir)(1:2, 1:2);
+      coords = rot * [d_x; d_y]
     endfunction
 
     function ang = find_rotation(this, ref_scan, ref_pose, cur_scan)
@@ -172,7 +174,7 @@ classdef OrigAhsm
       subplot(3, 1, 3);
       plot(corr_lags * resolution, corr);
       title("XCorr");
-      # TODO: print max
+      # TODO: print max on the figure
     endfunction
   endmethods
 

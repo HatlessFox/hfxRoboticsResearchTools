@@ -96,6 +96,7 @@ axis equal;
 
 plot(ww.walls(1,:), ww.walls(2,:), 'LineWidth', 1, 'color', 'k');
 hold on;
+grid on;
 # TODO: 8-6-24 robot display artifact
 display_robot2D(ref_scan, ref_pose, 'b');
 display_robot2D(cur_scan, est_pose, 'r');
