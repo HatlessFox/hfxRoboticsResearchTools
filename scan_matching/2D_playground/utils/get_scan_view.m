@@ -13,7 +13,7 @@ function [scan] = get_scan_view(pose, scnr, world)
     beam_end = [cos(angle) sin(angle)] .* [scnr.max_range scnr.max_range] + ...
                laser_coord;
     beam_segment = [laser_coord; beam_end];
-    intersections = intersectPolylines(world.segments.coord, beam_segment);
+    intersections = intersectPolylines(world.segments, beam_segment);
     if (isempty(intersections))
       skipped += 1;
       continue;

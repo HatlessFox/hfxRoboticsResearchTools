@@ -49,8 +49,7 @@ Opt.plot.robot_scale = 1;
 
 scan_matcher = OrigAhsm("debug", true);
 
-ww = wall_world();
-world = init_world(ww);
+world = SegmentedWorld.sq_room();
 sensor = setup_sensor();
 # TODO: createMap
 
@@ -72,5 +71,5 @@ fprintf("== DONE ==\n")
 fprintf("[GT Pose] %s\n", pose2str(cur_pose));
 fprintf("[SM Pose] %s\n", pose2str(est_pose));
 
-display_env2D(ww, ref_scan, ref_pose, cur_scan, est_pose, cur_pose);
+display_env2D(world, ref_scan, ref_pose, cur_scan, est_pose, cur_pose);
 ginput(1);
