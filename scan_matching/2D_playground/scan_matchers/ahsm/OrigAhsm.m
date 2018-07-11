@@ -117,7 +117,7 @@ classdef OrigAhsm
       d_y = this.find_coord_shift(rtcur_scan, rtref_scan, 2);
 
       rot = createRotation(-main_dir)(1:2, 1:2);
-      coords = rot * [d_x; d_y]
+      coords = rot * [d_x; d_y];
     endfunction
 
     function ang = find_rotation(this, ref_scan, ref_pose, cur_scan)

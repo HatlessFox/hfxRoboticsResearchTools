@@ -23,7 +23,7 @@ function [scan] = get_scan_view(pose, scnr, world)
       # TODO: refactor
       closest_d = inf;
       for i = 1:size(intersections, 1)
-        d = ptsDistance(intersections(i, :), laser_coord);
+        d = distancePoints(intersections(i, :), laser_coord);
         if (d < closest_d)
           obstacle = intersections(i, :);
           closest_d = d;
