@@ -39,7 +39,8 @@ function [scan] = get_scan_view(pose, scnr, world)
       laser_coord *= randn;
     end
 
-    noise = (obstacle - laser_coord) * 0; # d * stdErr(0, noise)
+    noise_coeff = random("normal", 0, scnr.dist_noise);
+    noise = noise_coeff * 1; # * (obstacle - laser_coord)
     obstacle += noise;
 
     # TODO: refactor

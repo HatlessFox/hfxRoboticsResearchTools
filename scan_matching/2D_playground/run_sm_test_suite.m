@@ -5,6 +5,7 @@ clear;
 
 # Params
 
+global SCAN_NOISE = 0.0;
 global CHIST_RES = 0.25;
 global AHIST_RES = deg2rad(1);
 global scan_matcher = OrigAhsm("ahist_res", AHIST_RES, "chist_res", CHIST_RES);
@@ -41,8 +42,8 @@ function test_scan_matching(world_id, world, ref_pose, transform)
   global total_tests_nm;
   total_tests_nm += 1;
 
-  global scan_matcher;
-  sensor = setup_sensor();
+  global scan_matcher; global SCAN_NOISE;
+  sensor = setup_sensor(SCAN_NOISE);
   cur_pose = ref_pose + transform;
 
   ref_scan = get_scan_view(ref_pose, sensor, world);
@@ -110,3 +111,5 @@ if (failed_tests_nm == 0)
 else
   fprintf("%d of %d failed.\n", failed_tests_nm, total_tests_nm);
 endif
+
+# TODO: add tests for noisy scans
