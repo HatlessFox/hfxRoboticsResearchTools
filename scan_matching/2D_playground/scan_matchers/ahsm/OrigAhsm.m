@@ -64,11 +64,15 @@ classdef OrigAhsm
     function coord_shift = find_coord_shift(this, ref_scan, cur_scan, coord_id)
       min_v = min([ref_scan.cart(:, coord_id); cur_scan.cart(:, coord_id)]);
       max_v = max([ref_scan.cart(:, coord_id); cur_scan.cart(:, coord_id)]);
-      hist_cbin_range = min_v:this.chist_res:max_v;
+      step = this.chist_res;
+      # TODO: does octave have a function for this transform?
+      aligned_mn = floor(min_v / step) * step;
+      aligned_mx = ceil(max_v / step) * step;
+      hist_cbin_range = aligned_mn:step:aligned_mx;
 
-      [ref_hist _] = hist(ref_scan.cart(:, coord_id), hist_cbin_range);
+      [ref_hist ref_bins] = hist(ref_scan.cart(:, coord_id), hist_cbin_range);
       ref_hist = normalize(ref_hist, "peak");
-      [cur_hist _] = hist(cur_scan.cart(:, coord_id), hist_cbin_range);
+      [cur_hist cur_bins] = hist(cur_scan.cart(:, coord_id), hist_cbin_range);
       cur_hist = normalize(cur_hist, "peak");
 
       max_abs_lag = floor(size(ref_hist, 1) / 2);
@@ -80,7 +84,7 @@ classdef OrigAhsm
 
       if this.is_debug_mode # show hists
         title = sprintf("[DEBUG] %d Coordinate Histograms", coord_id);
-        OrigAhsm.show_histograms(title, ref_hist, cur_hist,
+        OrigAhsm.show_histograms(title, ref_hist, ref_bins, cur_hist, cur_bins,
                                  lags, corr, this.chist_res, coord_shift);
       endif
     endfunction
@@ -95,16 +99,16 @@ classdef OrigAhsm
       main_dir = cbins(main_dir_i);
     endfunction
 
-    function coords = find_translation(this, ref_scan, ref_pose,
-                                       cur_scan, cur_pose)
-      main_dir = this.find_main_direction(ref_scan, ref_pose);
-      main_dir_dpose = [0 0 main_dir];
-
-      rtref_scan = transform_scan(ref_scan, ref_pose + main_dir_dpose);
-      rtcur_scan = transform_scan(cur_scan, cur_pose + main_dir_dpose);
+    function coords = translation_along_direction(this, dir,
+                                                  ref_scan, ref_pose,
+                                                  cur_scan, cur_pose)
+      dir_dpose = [0 0 dir];
+      rtref_scan = transform_scan(ref_scan, ref_pose + dir_dpose);
+      rtcur_scan = transform_scan(cur_scan, cur_pose + dir_dpose);
 
       if this.is_debug_mode
-        figure("name", "[DEBUG] Main Direction Alignment", "numbertitle", "off",
+        title = sprintf("[DEBUG] %.2f Direction Alignment", rad2deg(dir));
+        figure("name", title, "numbertitle", "off",
              "menubar", "none", "toolbar", "none");
         hold on;
         axis equal;
@@ -116,8 +120,17 @@ classdef OrigAhsm
       d_x = this.find_coord_shift(rtcur_scan, rtref_scan, 1);
       d_y = this.find_coord_shift(rtcur_scan, rtref_scan, 2);
 
-      rot = createRotation(-main_dir)(1:2, 1:2);
+      rot = createRotation(-dir)(1:2, 1:2);
       coords = rot * [d_x; d_y];
+    endfunction
+
+    function coords = find_translation(this, ref_scan, ref_pose,
+                                       cur_scan, cur_pose)
+      main_dir = this.find_main_direction(ref_scan, ref_pose);
+      md_coords = this.translation_along_direction(main_dir, ref_scan, ref_pose,
+                                                   cur_scan, cur_pose);
+      # TODO: add correction along the secondary dir (2nd max)
+      coords = md_coords;
     endfunction
 
     function ang = find_rotation(this, ref_scan, ref_pose, cur_scan)
@@ -140,7 +153,7 @@ classdef OrigAhsm
 
       if this.is_debug_mode
         OrigAhsm.show_histograms("[DEBUG] Angle Histograms",
-                                 ref_ahist, cur_ahist,
+                                 ref_ahist, ref_cbins, cur_ahist, cur_cbins,
                                  a_lags, a_xcorr, rad2deg(ares), ang);
       endif
     endfunction
@@ -158,17 +171,18 @@ classdef OrigAhsm
   endmethods
 
   methods(Static)
-    function [] = show_histograms(figure_title, ref_hist, cur_hist,
-                                  corr_lags, corr, resolution, best)
+    function [] = show_histograms(figure_title, ref_hist, ref_bins,
+                                  cur_hist, cur_bins, corr_lags, corr,
+                                  resolution, best)
       # show hists
       # TODO: figure positioning is hardcoded
       figure("name", figure_title, "numbertitle", "off",
              "menubar", "none", "toolbar", "none", "position", [0 0 700 700]);
       subplot(3, 1, 1);
-      plot(1:size(ref_hist, 1), ref_hist);
+      plot(ref_bins, ref_hist);
       title("Reference");
       subplot(3, 1, 2);
-      plot(1:size(cur_hist, 1), cur_hist);
+      plot(cur_bins, cur_hist);
       title("Current");
       # show xcorr
       subplot(3, 1, 3);

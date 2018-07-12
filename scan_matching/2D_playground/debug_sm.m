@@ -67,9 +67,10 @@ d_pose = scan_matcher.find_transformation(ref_scan, ref_pose,
 
 est_pose = ref_pose + d_pose;
 
-fprintf("== DONE ==\n")
+fprintf("== DONE ==\n");
+fprintf("[Rf Pose] %s\n", pose2str(ref_pose));
 fprintf("[GT Pose] %s\n", pose2str(cur_pose));
 fprintf("[SM Pose] %s\n", pose2str(est_pose));
 
-display_env2D(world, ref_scan, ref_pose, cur_scan, est_pose, cur_pose);
+display_env2D(world, ref_scan, ref_pose, cur_scan, cur_pose, est_pose);
 ginput(1);

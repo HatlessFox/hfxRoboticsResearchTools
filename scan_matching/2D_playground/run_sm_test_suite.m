@@ -5,7 +5,9 @@ clear;
 
 # Params
 
-global scan_matcher = OrigAhsm("ahist_res", deg2rad(1), "chist_res", 0.25);
+global CHIST_RES = 0.25;
+global AHIST_RES = deg2rad(1);
+global scan_matcher = OrigAhsm("ahist_res", AHIST_RES, "chist_res", CHIST_RES);
 
 figure("name", "Current Test",  "numbertitle", "off",
        "menubar", "none", "toolbar", "none");
@@ -27,14 +29,12 @@ function poses = range_to_poses(params_mtx)
   endfor
 endfunction
 
-function is_eq = is_float_eq(a, b)
-  is_eq = abs(a - b) < 1e-4;
-endfunction
-
 function is_eq = is_pose_eq(p1, p2)
-  is_eq = and(is_float_eq(p1(1), p2(1)),
-              is_float_eq(p1(2), p2(2)),
-              is_float_eq(p1(3), p2(3)));
+  global CHIST_RES; global AHIST_RES;
+  eps = 1e-6;
+  is_eq = and(abs(p1(1) - p2(1)) <= CHIST_RES + eps,
+              abs(p1(2) - p2(2)) <= CHIST_RES + eps,
+              abs(p1(3) - p2(3)) <= AHIST_RES + eps);
 endfunction
 
 function test_scan_matching(world_id, world, ref_pose, transform)
@@ -62,7 +62,7 @@ function test_scan_matching(world_id, world, ref_pose, transform)
     title = sprintf("[%s] %s + %s = %s", world_id,
                     pose2str(ref_pose), pose2str(transform), status);
     display_env2D(world, ref_scan, ref_pose, cur_scan,
-                  ref_pose + est_transform, ref_pose + transform, f);
+                  ref_pose + transform, ref_pose + est_transform, f);
   endif
 
   if (is_ok)
